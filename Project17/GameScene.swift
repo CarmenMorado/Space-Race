@@ -15,6 +15,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     let possibleEnemies = ["ball", "hammer", "tv"]
     var isGameOver = false
     var gameTimer: Timer?
+    
+    var enemyNumber = 0
+    var timeInterval = 1.0
 
     var scoreLabel: SKLabelNode!
     var score = 0 {
@@ -48,7 +51,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         physicsWorld.gravity = CGVector(dx: 0, dy: 0)
         physicsWorld.contactDelegate = self
         
-        gameTimer = Timer.scheduledTimer(timeInterval: 0.35, target: self, selector: #selector(createEnemy), userInfo: nil, repeats: true)
+        gameTimer = Timer.scheduledTimer(timeInterval: timeInterval, target: self, selector: #selector(createEnemy), userInfo: nil, repeats: true)
     }
     
     @objc func createEnemy() {
@@ -64,6 +67,15 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         sprite.physicsBody?.angularVelocity = 5
         sprite.physicsBody?.linearDamping = 0
         sprite.physicsBody?.angularDamping = 0
+        
+        enemyNumber += 1
+        
+        if enemyNumber == 20 {
+            timeInterval = timeInterval - 0.1
+            enemyNumber = 0
+            gameTimer?.invalidate()
+            gameTimer = Timer.scheduledTimer(timeInterval: timeInterval, target: self, selector: #selector(createEnemy), userInfo: nil, repeats: true)
+        }
     }
     
     override func update(_ currentTime: TimeInterval) {
@@ -91,6 +103,20 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         player.position = location
     }
     
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        if children.contains(player) {
+            let explosion = SKEmitterNode(fileNamed: "explosion")!
+            explosion.position = player.position
+            addChild(explosion)
+        }
+
+        player.removeFromParent()
+
+        isGameOver = true
+        
+        gameTimer?.invalidate()
+    }
+    
     func didBegin(_ contact: SKPhysicsContact) {
         let explosion = SKEmitterNode(fileNamed: "explosion")!
         explosion.position = player.position
@@ -99,6 +125,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         player.removeFromParent()
 
         isGameOver = true
+        
+        gameTimer?.invalidate()
     }
 
 }
